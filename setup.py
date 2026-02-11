@@ -39,6 +39,7 @@ setup(
         "librosa>=0.10.0",
         "soundfile>=0.12.0",
         "pyaudio>=0.2.13",
+        "sounddevice>=0.4.6",
         "audioread>=3.0.0",
         
         # ASR specific
