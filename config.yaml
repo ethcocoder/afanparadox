@@ -1,0 +1,83 @@
+# AfanParadox Configuration
+
+# Supported languages
+languages:
+  - amharic
+  - oromo
+  - tigrinya
+
+# Model configurations
+models:
+  asr:
+    name: "wav2vec2-xls-r-300m"
+    pretrained: "facebook/wav2vec2-xls-r-300m"
+    sample_rate: 16000
+    target_wer: 0.15  # 15%
+    
+  llm:
+    name: "afan-transformer"
+    parameters: 200_000_000  # 200M
+    layers: 24
+    hidden_dim: 1024
+    attention_heads: 16
+    context_length: 2048
+    vocab_size: 50000
+    
+  tts:
+    acoustic_model: "fastspeech2"
+    vocoder: "hifigan"
+    sample_rate: 22050
+    target_mos: 4.0  # Out of 5.0
+
+# Training configuration
+training:
+  asr:
+    batch_size: 16
+    learning_rate: 0.0001
+    epochs: 50
+    warmup_steps: 1000
+    
+  llm:
+    batch_size: 32
+    learning_rate: 0.0003
+    max_steps: 100000
+    warmup_steps: 2000
+    gradient_accumulation: 4
+    
+  tts:
+    batch_size: 32
+    learning_rate: 0.0001
+    epochs: 200
+
+# Data paths
+data:
+  asr:
+    train: "data/asr/train"
+    validation: "data/asr/validation"
+    test: "data/asr/test"
+    
+  llm:
+    train: "data/llm/train.txt"
+    validation: "data/llm/validation.txt"
+    
+  tts:
+    train: "data/tts/train"
+    validation: "data/tts/validation"
+
+# Deployment
+deployment:
+  target_latency_ms: 2000  # 2 seconds total
+  target_size_mb: 300
+  quantization: "int8"
+  target_devices:
+    - "raspberry_pi_4"
+    - "android"
+    - "low_end_pc"
+
+# Monitoring
+monitoring:
+  wandb:
+    project: "afanparadox"
+    entity: "afanparadox-team"
+  tensorboard:
+    log_dir: "logs/"
