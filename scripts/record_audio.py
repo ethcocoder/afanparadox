@@ -32,12 +32,12 @@ class AudioRecorder:
         print(f"Channels: {channels}")
         print(f"Output Directory: {output_dir}")
     
-    def record(self, duration: int = 5, prompt: str = None) -> str:
+    def record(self, max_duration: int = 30, prompt: str = None) -> str:
         """
-        Record audio
+        Record audio with manual stop
         
         Args:
-            duration: Recording duration in seconds
+            max_duration: Maximum recording duration in seconds
             prompt: Optional text prompt for speaker to read
             
         Returns:
@@ -46,20 +46,25 @@ class AudioRecorder:
         if prompt:
             print(f"\n📝 Please read: {prompt}")
         
-        print(f"🔴 Recording for {duration} seconds...")
-        print("   Speak now!")
+        print(f"🔴 Recording... Press ENTER to stop.")
         
         try:
-            # Record audio
-            audio = sd.rec(
-                int(duration * self.sample_rate),
-                samplerate=self.sample_rate,
-                channels=self.channels,
-                dtype='float32'
-            )
-            sd.wait()  # Wait until recording is finished
+            # Use a list to store audio chunks
+            audio_data = []
             
+            def callback(indata, frames, time, status):
+                if status:
+                    print(status)
+                audio_data.append(indata.copy())
+
+            # Start recording in a stream
+            with sd.InputStream(samplerate=self.sample_rate, channels=self.channels, callback=callback):
+                input() # Wait for the user to press Enter
+
             print("✅ Recording complete!")
+            
+            # Combine chunks
+            audio = np.concatenate(audio_data, axis=0)
             
             # Generate filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -73,7 +78,7 @@ class AudioRecorder:
             # Save metadata
             metadata = {
                 "filename": filename,
-                "duration": duration,
+                "duration": len(audio) / self.sample_rate,
                 "sample_rate": self.sample_rate,
                 "channels": self.channels,
                 "prompt": prompt,
@@ -115,8 +120,8 @@ class AudioRecorder:
         print("Press Enter to start each recording...\n")
         
         for i, prompt in enumerate(prompts, 1):
-            input(f"[{i}/{len(prompts)}] Press Enter to continue...")
-            self.record(duration=5, prompt=prompt)
+            input(f"[{i}/{len(prompts)}] Press Enter to START recording...")
+            self.record(prompt=prompt)
             print()
         
         print("🎉 Recording session complete!")
@@ -142,9 +147,8 @@ def main():
     if choice == "1":
         recorder.interactive_session()
     elif choice == "2":
-        duration = int(input("Duration (seconds): ") or "5")
         prompt = input("Prompt (optional): ").strip() or None
-        recorder.record(duration=duration, prompt=prompt)
+        recorder.record(prompt=prompt)
     elif choice == "3":
         print("👋 Goodbye!")
     else:
